@@ -1,5 +1,5 @@
 export const API_BASE_URL = 'https://apim-hackathon-fiap.azure-api.net/identity/api';
-export const API_BASE_ORDERS_URL = 'https://apim-hackathon-fiap.azure-api.net/kitchen/api';
+export const API_BASE_ORDERS_URL = 'http://localhost:5180/api';
 export const API_BASE_CATALOG_URL = 'https://apim-hackathon-fiap.azure-api.net/menu/api';
 
 export interface ApiError {
@@ -383,7 +383,7 @@ export interface ApiOrder {
   id: string;
   items: OrderItem[];
   total: number;
-  status: 'pending' | 'accepted' | 'preparing' | 'ready' | 'cancelled' | 'Received';
+  status: 'pending' | 'accepted' | 'preparing' | 'ready' | 'cancelled' | 'Received' | 'delivered';
   orderDate: string;
 }
 

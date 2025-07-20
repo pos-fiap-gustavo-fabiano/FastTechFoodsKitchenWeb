@@ -2,6 +2,9 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import StatusAnimation from './StatusAnimation';
 import { User } from '@/hooks/useAuth';
 import { OrdersApi, ApiOrder, UpdateOrderStatusRequest } from '@/lib/api';
@@ -13,6 +16,10 @@ interface OrderManagementProps {
 
 const OrderManagement = ({ user }: OrderManagementProps) => {
   const [orders, setOrders] = useState<ApiOrder[]>([]);
+  const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<ApiOrder | null>(null);
+  const [deliveryCode, setDeliveryCode] = useState('');
+  const [isConfirming, setIsConfirming] = useState(false);
 
   // Carregar pedidos da API
   const loadOrders = async () => {
@@ -50,9 +57,55 @@ const OrderManagement = ({ user }: OrderManagementProps) => {
     }
   };
 
+  const confirmDelivery = async () => {
+    if (!selectedOrder || deliveryCode.length !== 4) {
+      toast.error('Código deve ter exatamente 4 dígitos');
+      return;
+    }
+
+    try {
+      setIsConfirming(true);
+      
+      // Chamar API para confirmar entrega com código
+      const updateData: UpdateOrderStatusRequest = {
+        status: 'delivered',
+        updatedBy: user.id,
+        userName: user.name,
+        notes: `Entrega confirmada com código: ${deliveryCode}`
+      };
+
+      await OrdersApi.updateOrderStatus(selectedOrder.id, updateData);
+      toast.success(`Entrega do pedido ${selectedOrder.id} confirmada!`);
+      
+      // Fechar modal e limpar estados
+      setIsDeliveryModalOpen(false);
+      setSelectedOrder(null);
+      setDeliveryCode('');
+      
+      // Recarregar pedidos
+      await loadOrders();
+    } catch (error) {
+      console.error('Erro ao confirmar entrega:', error);
+      toast.error('Erro ao confirmar entrega do pedido');
+    } finally {
+      setIsConfirming(false);
+    }
+  };
+
+  const handleDeliveryClick = (order: ApiOrder) => {
+    setSelectedOrder(order);
+    setIsDeliveryModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsDeliveryModalOpen(false);
+    setSelectedOrder(null);
+    setDeliveryCode('');
+  };
+
   const getStatusActions = (order: ApiOrder) => {
     switch (order.status) {
-      case 'Received':
+      case 'pending':
         return (
           <div className="flex gap-2">
             <Button
@@ -93,14 +146,24 @@ const OrderManagement = ({ user }: OrderManagementProps) => {
         );
       case 'ready':
         return (
-          <div className="text-sm text-green-600 font-semibold">
-            ✅ Pedido Pronto!
-          </div>
+          <Button
+            size="sm"
+            className="bg-purple-600 hover:bg-purple-700"
+            onClick={() => handleDeliveryClick(order)}
+          >
+            Confirmar Entrega
+          </Button>
         );
       case 'cancelled':
         return (
           <div className="text-sm text-red-600 font-semibold">
             ❌ Pedido Cancelado
+          </div>
+        );
+      case 'delivered':
+        return (
+          <div className="text-sm text-blue-600 font-semibold">
+            🚚 Pedido Entregue
           </div>
         );
       default:
@@ -181,6 +244,50 @@ const OrderManagement = ({ user }: OrderManagementProps) => {
           </p>
         </div>
       )}
+
+      {/* Modal de Confirmação de Entrega */}
+      <Dialog open={isDeliveryModalOpen} onOpenChange={handleCloseModal}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirmar Entrega</DialogTitle>
+            <DialogDescription>
+              Digite o código de 4 dígitos para confirmar a entrega do pedido #{selectedOrder?.id}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="deliveryCode" className="text-right">
+                Código
+              </Label>
+              <Input
+                id="deliveryCode"
+                type="number"
+                placeholder="0000"
+                value={deliveryCode}
+                onChange={(e) => {
+                  const value = e.target.value.slice(0, 4); // Limita a 4 dígitos
+                  setDeliveryCode(value);
+                }}
+                className="col-span-3 text-center text-lg font-mono"
+                maxLength={4}
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseModal}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={confirmDelivery}
+              disabled={deliveryCode.length !== 4 || isConfirming}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              {isConfirming ? 'Confirmando...' : 'Confirmar Entrega'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
