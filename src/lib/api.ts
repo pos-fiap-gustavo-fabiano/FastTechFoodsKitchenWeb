@@ -1,6 +1,8 @@
-export const API_BASE_URL = 'https://apim-hackathon-fiap.azure-api.net/identity/api';
-export const API_BASE_ORDERS_URL = 'http://localhost:5180/api';
-export const API_BASE_CATALOG_URL = 'https://apim-hackathon-fiap.azure-api.net/menu/api';
+// URLs da API configuradas via variáveis de ambiente
+// Para alterar os endpoints, edite o arquivo .env na raiz do projeto
+export const API_BASE_URL = import.meta.env.VITE_IDENTITY_API_BASE_URL || 'https://apim-hackathon-fiap.azure-api.net/identity/api';
+export const API_BASE_ORDERS_URL = import.meta.env.VITE_KITCHEN_API_BASE_URL || 'http://localhost:5180/api';
+export const API_BASE_CATALOG_URL = import.meta.env.VITE_MENU_API_BASE_URL || 'https://apim-hackathon-fiap.azure-api.net/menu/api';
 
 export interface ApiError {
   message: string;
@@ -171,7 +173,7 @@ export const AuthApi = {
   register: (userData: RegisterRequest) => 
     ApiClient.post<UserProfile>('/auth/register', userData),
   
-  getCurrentUser: () => ApiClient.get<UserProfile>('/auth/eu'),
+  getCurrentUser: () => ApiClient.get<UserProfile>('/auth/me'),
   
   getTokenInfo: () => ApiClient.get<TokenInfo>('/auth/token-info'),
   
@@ -383,8 +385,10 @@ export interface ApiOrder {
   id: string;
   items: OrderItem[];
   total: number;
-  status: 'pending' | 'accepted' | 'preparing' | 'ready' | 'cancelled' | 'Received' | 'delivered';
+  status: 'pending' | 'accepted' | 'preparing' | 'ready' | 'cancelled' | 'delivered';
   orderDate: string;
+  deliveryMethod: 'delivery' | 'balcao' | 'drive-thru';
+  deliveryCode?: string; // Código de entrega, se aplicável
 }
 
 export interface UpdateOrderStatusRequest {

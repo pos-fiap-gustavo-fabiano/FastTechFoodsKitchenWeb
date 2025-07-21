@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import StatusAnimation from './StatusAnimation';
 import { User } from '@/hooks/useAuth';
 import { OrdersApi, ApiOrder, UpdateOrderStatusRequest } from '@/lib/api';
@@ -20,11 +21,12 @@ const OrderManagement = ({ user }: OrderManagementProps) => {
   const [selectedOrder, setSelectedOrder] = useState<ApiOrder | null>(null);
   const [deliveryCode, setDeliveryCode] = useState('');
   const [isConfirming, setIsConfirming] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   // Carregar pedidos da API
-  const loadOrders = async () => {
+  const loadOrders = async (status?: string) => {
     try {
-      const ordersData = await OrdersApi.getOrders();
+      const ordersData = await OrdersApi.getOrders(status === 'all' ? undefined : status);
       setOrders(ordersData);
     } catch (error) {
       console.error('Erro ao carregar pedidos:', error);
@@ -33,24 +35,42 @@ const OrderManagement = ({ user }: OrderManagementProps) => {
   };
 
   useEffect(() => {
-    loadOrders();
-  }, []);
+    loadOrders(statusFilter);
+  }, [statusFilter]);
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
+      // Buscar o pedido para verificar o deliveryMethod
+      const order = orders.find(o => o.id === orderId);
+      const isDelivery = order?.deliveryMethod === 'delivery';
+      
+      // Personalizar a mensagem baseada no método de entrega
+      let notes = `Status alterado para ${newStatus}`;
+      if (newStatus === 'delivered' && isDelivery) {
+        notes = 'Pedido saiu para entrega';
+      } else if (newStatus === 'delivered') {
+        notes = 'Entrega confirmada';
+      }
+
       // Chamar API real
       const updateData: UpdateOrderStatusRequest = {
         status: newStatus,
         updatedBy: user.id,
         userName: user.name,
-        notes: `Status alterado para ${newStatus}`
+        notes: notes
       };
 
       await OrdersApi.updateOrderStatus(orderId, updateData);
-      toast.success(`Pedido ${orderId} atualizado!`);
+      
+      // Personalizar mensagem de sucesso
+      if (newStatus === 'delivered' && isDelivery) {
+        toast.success(`Pedido ${orderId} saiu para entrega! 🛵`);
+      } else {
+        toast.success(`Pedido ${orderId} atualizado!`);
+      }
       
       // Recarregar pedidos após atualização
-      await loadOrders();
+      await loadOrders(statusFilter);
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
       toast.error('Erro ao atualizar status do pedido');
@@ -83,7 +103,7 @@ const OrderManagement = ({ user }: OrderManagementProps) => {
       setDeliveryCode('');
       
       // Recarregar pedidos
-      await loadOrders();
+      await loadOrders(statusFilter);
     } catch (error) {
       console.error('Erro ao confirmar entrega:', error);
       toast.error('Erro ao confirmar entrega do pedido');
@@ -101,6 +121,46 @@ const OrderManagement = ({ user }: OrderManagementProps) => {
     setIsDeliveryModalOpen(false);
     setSelectedOrder(null);
     setDeliveryCode('');
+  };
+
+  const getStatusLabel = (status: string): string => {
+    const statusLabels: Record<string, string> = {
+      'pending': 'pendente',
+      'accepted': 'aceito',
+      'preparing': 'em preparo',
+      'ready': 'pronto',
+      'delivered': 'entregue',
+      'cancelled': 'cancelado'
+    };
+    return statusLabels[status] || status;
+  };
+
+  const getDeliveryMethodLabel = (method: string): string => {
+    const methodLabels: Record<string, string> = {
+      'delivery': 'Entrega',
+      'balcao': 'Balcão',
+      'drive-thru': 'Drive-thru'
+    };
+    return methodLabels[method] || method;
+  };
+
+  const getDeliveryMethodIcon = (method: string): string => {
+    const methodIcons: Record<string, string> = {
+      'delivery': '🛵',
+      'balcao': '🏪',
+      'drive-thru': '🚗'
+    };
+    return methodIcons[method] || '📦';
+  };
+
+  const handleReadyAction = (order: ApiOrder) => {
+    if (order.deliveryMethod === 'delivery') {
+      // Para delivery, vai direto para "saiu para entrega"
+      updateOrderStatus(order.id, 'delivered');
+    } else {
+      // Para balcão e drive-thru, abre modal com código
+      handleDeliveryClick(order);
+    }
   };
 
   const getStatusActions = (order: ApiOrder) => {
@@ -149,9 +209,9 @@ const OrderManagement = ({ user }: OrderManagementProps) => {
           <Button
             size="sm"
             className="bg-purple-600 hover:bg-purple-700"
-            onClick={() => handleDeliveryClick(order)}
+            onClick={() => handleReadyAction(order)}
           >
-            Confirmar Entrega
+            {order.deliveryMethod === 'delivery' ? 'Saiu para Entrega' : 'Confirmar Entrega'}
           </Button>
         );
       case 'cancelled':
@@ -163,7 +223,11 @@ const OrderManagement = ({ user }: OrderManagementProps) => {
       case 'delivered':
         return (
           <div className="text-sm text-blue-600 font-semibold">
-            🚚 Pedido Entregue
+            {order.deliveryMethod === 'delivery' ? (
+              <span className="animate-pulse">🛵 Saiu para Entrega</span>
+            ) : (
+              '🚚 Pedido Entregue'
+            )}
           </div>
         );
       default:
@@ -174,11 +238,30 @@ const OrderManagement = ({ user }: OrderManagementProps) => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-gray-800">
-          Pedidos da Cozinha
-        </h2>
+        <div className="flex items-center gap-4">
+          <h2 className="text-3xl font-bold text-gray-800">
+            Pedidos da Cozinha
+          </h2>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filtrar por status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os status</SelectItem>
+              <SelectItem value="pending">Pendentes</SelectItem>
+              <SelectItem value="accepted">Aceitos</SelectItem>
+              <SelectItem value="preparing">Em preparo</SelectItem>
+              <SelectItem value="ready">Prontos</SelectItem>
+              <SelectItem value="delivered">Entregues</SelectItem>
+              <SelectItem value="cancelled">Cancelados</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <div className="text-sm text-gray-600">
-          {orders.filter(o => o.status === 'pending').length} pedidos aguardando
+          {statusFilter === 'all' ? 
+            `${orders.length} pedidos total` : 
+            `${orders.length} pedidos com status "${getStatusLabel(statusFilter)}"`
+          }
         </div>
       </div>
 
@@ -197,6 +280,12 @@ const OrderManagement = ({ user }: OrderManagementProps) => {
                   <CardDescription>
                     {new Date(order.orderDate).toLocaleString('pt-BR')}
                   </CardDescription>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-lg">{getDeliveryMethodIcon(order.deliveryMethod)}</span>
+                    <span className="text-sm font-medium text-gray-600">
+                      {getDeliveryMethodLabel(order.deliveryMethod)}
+                    </span>
+                  </div>
                 </div>
                 <StatusAnimation status={order.status} />
               </div>
