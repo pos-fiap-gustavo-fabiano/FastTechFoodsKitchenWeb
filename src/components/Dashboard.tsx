@@ -227,7 +227,7 @@ const Dashboard = ({ user }: DashboardProps) => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Ticket Médio</p>
-                <p className="text-2xl font-bold">R$ {(dashboardData.avgOrderValue || 0).toFixed(2)}</p>
+                <p className="text-2xl font-bold">R$ {(dashboardData.totalRevenue / dashboardData.totalOrders).toFixed(2)}</p>
               </div>
               <TrendingUp className="h-8 w-8 text-purple-600" />
             </div>
