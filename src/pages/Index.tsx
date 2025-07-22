@@ -93,22 +93,7 @@ const Index = () => {
                   <Users className="h-4 w-4" />
                   Dashboard
                 </Button>
-                <Button
-                  variant={activeTab === 'users' ? 'default' : 'outline'}
-                  onClick={() => setActiveTab('users')}
-                  className="flex items-center gap-2"
-                >
-                  <UserCog className="h-4 w-4" />
-                  Gerenciar Usuários
-                </Button>
-                <Button
-                  variant={activeTab === 'api-test' ? 'default' : 'outline'}
-                  onClick={() => setActiveTab('api-test')}
-                  className="flex items-center gap-2"
-                >
-                  <Settings className="h-4 w-4" />
-                  Teste da API
-                </Button>
+                
               </>
             )}
           </div>
