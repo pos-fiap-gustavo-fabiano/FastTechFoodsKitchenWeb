@@ -36,6 +36,10 @@ const OrderManagement = ({ user }: OrderManagementProps) => {
 
   useEffect(() => {
     loadOrders(statusFilter);
+    const interval = setInterval(() => {
+      loadOrders(statusFilter);
+    }, 30000); // 30 segundos
+    return () => clearInterval(interval);
   }, [statusFilter]);
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
