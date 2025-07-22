@@ -121,10 +121,6 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }: AuthModalProps) => {
         )}
 
         <Tabs defaultValue="login" value={isLogin ? 'login' : 'register'} onValueChange={(value) => setIsLogin(value === 'login')}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login">Entrar</TabsTrigger>
-            <TabsTrigger value="register">Cadastrar</TabsTrigger>
-          </TabsList>
 
           <TabsContent value="login">
             <Card>
@@ -189,94 +185,7 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }: AuthModalProps) => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="register">
-            <Card>
-              <CardHeader>
-                <CardTitle>Criar Conta</CardTitle>
-                <CardDescription>
-                  Registro de novo funcionário
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleRegisterSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="register-name">Nome Completo *</Label>
-                    <Input
-                      id="register-name"
-                      type="text"
-                      placeholder="Digite seu nome completo"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      required
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="register-email">E-mail *</Label>
-                    <Input
-                      id="register-email"
-                      type="email"
-                      placeholder="funcionario@fasttechfoods.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="register-cpf">CPF (opcional)</Label>
-                    <Input
-                      id="register-cpf"
-                      type="text"
-                      placeholder="000.000.000-00"
-                      value={cpf}
-                      onChange={(e) => setCpf(e.target.value)}
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="register-role">Cargo</Label>
-                    <Select value={role} onValueChange={setRole} disabled={isLoading}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o cargo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Employee">Funcionário</SelectItem>
-                        <SelectItem value="Manager">Gerente</SelectItem>
-                        <SelectItem value="Admin">Administrador</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="register-password">Senha *</Label>
-                    <Input
-                      id="register-password"
-                      type="password"
-                      placeholder="Digite uma senha segura"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-gradient-to-r from-red-600 to-yellow-500 hover:from-red-700 hover:to-yellow-600"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Cadastrando...
-                      </>
-                    ) : (
-                      'Cadastrar'
-                    )}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          
         </Tabs>
       </DialogContent>
     </Dialog>
