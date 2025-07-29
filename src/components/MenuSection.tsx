@@ -176,7 +176,12 @@ const MenuSection = ({ user }: MenuSectionProps) => {
           availability: productForm.availability,
           categoryId: productForm.categoryId
         };
-        const updatedProduct = await CatalogApi.updateProduct(editingProduct.id, updateData);
+        
+        // Usar método com FormData se há imagem, senão usar método normal
+        const updatedProduct = selectedImage 
+          ? await CatalogApi.updateProductWithImage(editingProduct.id, updateData, selectedImage)
+          : await CatalogApi.updateProduct(editingProduct.id, updateData);
+          
         toast.success('Produto atualizado com sucesso!');
         // Atualiza produto no estado local
         setProducts(prev => prev.map(p => p.id === editingProduct.id ? updatedProduct : p));
@@ -480,22 +485,30 @@ const MenuSection = ({ user }: MenuSectionProps) => {
                   </SelectContent>
                 </Select>
               </div>
-              {!editingProduct && (
-                <div>
-                  <Label htmlFor="product-image">Imagem do Produto</Label>
-                  <Input
-                    id="product-image"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setSelectedImage(e.target.files?.[0] || null)}
-                  />
-                  {selectedImage && (
-                    <p className="text-sm text-gray-600 mt-2">
-                      Arquivo selecionado: {selectedImage.name}
-                    </p>
-                  )}
-                </div>
-              )}
+              <div>
+                <Label htmlFor="product-image">Imagem do Produto</Label>
+                <Input
+                  id="product-image"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setSelectedImage(e.target.files?.[0] || null)}
+                />
+                {selectedImage && (
+                  <p className="text-sm text-gray-600 mt-2">
+                    Arquivo selecionado: {selectedImage.name}
+                  </p>
+                )}
+                {editingProduct && editingProduct.imageUrl && !selectedImage && (
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-600 mb-2">Imagem atual:</p>
+                    <img 
+                      src={editingProduct.imageUrl} 
+                      alt={editingProduct.name}
+                      className="w-20 h-20 object-cover rounded border"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex items-center space-x-2">
               <Switch

@@ -1,8 +1,8 @@
 // URLs da API configuradas via variáveis de ambiente
 // Para alterar os endpoints, edite o arquivo .env na raiz do projeto
-export const API_BASE_URL = import.meta.env.VITE_IDENTITY_API_BASE_URL || 'https://apim-hackathon-fiap.azure-api.net/identity/api';
-export const API_BASE_ORDERS_URL = import.meta.env.VITE_KITCHEN_API_BASE_URL || 'http://localhost:5180/api';
-export const API_BASE_CATALOG_URL = import.meta.env.VITE_MENU_API_BASE_URL || 'https://apim-hackathon-fiap.azure-api.net/menu/api';
+export const API_BASE_URL = import.meta.env.VITE_IDENTITY_API_BASE_URL || 'http(s)://apim-fastechfood.azure-api.net/identity/api';
+export const API_BASE_ORDERS_URL = import.meta.env.VITE_KITCHEN_API_BASE_URL || 'http(s)://apim-fastechfood.azure-api.net/kitchen/api';
+export const API_BASE_CATALOG_URL = import.meta.env.VITE_MENU_API_BASE_URL || 'http(s)://apim-fastechfood.azure-api.net/menu/api';
 
 export interface ApiError {
   message: string;
@@ -361,6 +361,42 @@ export const CatalogApi = {
     return await response.json();
   },
   updateProduct: (id: string, data: UpdateProductRequest) => CatalogApiClient.put<Product>(`products/${id}`, data),
+  updateProductWithImage: async (id: string, data: UpdateProductRequest, imageFile?: File): Promise<Product> => {
+    const url = `${API_BASE_CATALOG_URL}/products/${id}`;
+    const token = localStorage.getItem('auth_token');
+    
+    const formData = new FormData();
+    formData.append('Name', data.name);
+    formData.append('Description', data.description);
+    formData.append('Price', data.price.toString());
+    formData.append('Availability', data.availability.toString());
+    formData.append('CategoryId', data.categoryId);
+    
+    if (imageFile) {
+      formData.append('Image', imageFile);
+    }
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      let errorMessage = 'Erro ao atualizar produto';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.details || errorMessage;
+      } catch {
+        errorMessage = `Erro ${response.status}: ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
+    }
+
+    return await response.json();
+  },
   updateProductAvailability: (id: string, data: UpdateAvailabilityRequest) => CatalogApiClient.patch<Product>(`products/${id}/availability`, data),
   deleteProduct: (id: string) => CatalogApiClient.delete<void>(`products/${id}`),
 
