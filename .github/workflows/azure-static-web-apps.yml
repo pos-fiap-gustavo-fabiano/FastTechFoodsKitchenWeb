@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
 
 env:
-  VITE_IDENTITY_API_BASE_URL: 'https://apim-hackathon-fiap.azure-api.net/identity/api'
-  VITE_KITCHEN_API_BASE_URL: 'https://apim-hackathon-fiap.azure-api.net/kitchen/api'
-  VITE_MENU_API_BASE_URL: 'https://apim-hackathon-fiap.azure-api.net/menu/api'
+  VITE_IDENTITY_API_BASE_URL: 'https://apim-fastechfood.azure-api.net/identity/api'
+  VITE_KITCHEN_API_BASE_URL: 'https://apim-fastechfood.azure-api.net/kitchen/api'
+  VITE_MENU_API_BASE_URL: 'https://apim-fastechfood.azure-api.net/menu/api'
 
 jobs:
   build_and_deploy_job:
